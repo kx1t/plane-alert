@@ -32,8 +32,6 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-171737107-1"></script>
     <script type="text/javascript" src="sort-table.js"></script>
     <title>Plane-Alert</title>
-	<link rel="stylesheet" href="leaflet.css" />
-	<script src="leaflet.js"></script>
     <style>
         body { font: 12px/1.4 "Helvetica Neue", Arial, sans-serif; }
         a { color: #0077ff; }
@@ -41,24 +39,38 @@
 	h2 {text-align: center}
 	.planetable { border: 1; margin: 0; padding: 0; font: 12px/1.4 "Helvetica Neue", Arial, sans-serif; text-align: center }
 	.history { border: none; margin: 0; padding: 0; font: 12px/1.4 "Helvetica Neue", Arial, sans-serif; }
-	.footer{ border: none; margin: 0; padding: 0; font: 8px/1.4 "Helvetica Neue", Arial, sans-serif; text-align: center }
+	.footer{ border: none; margin: 0; padding: 0; font: 10px/1.4 "Helvetica Neue", Arial, sans-serif; text-align: center }
     </style>
 </head>
 
 <body>
 
-
 <h1>Plane Alert</h1>
-<h2>This website shows a list of aircraft of interest that were heard by <a href="$$ADSBURL$$" target="_blank">$$NAME$$'s ADS-B station</a></h2>
+   <h2>This website shows a list of aircraft of interest that were heard by <a href="##ADSBLINK##" target="_blank">##NAME##</a>'s ADS-B station</h2>
 
 <section style="border: none; margin: 0; padding: 0; font: 12px/1.4 'Helvetica Neue', Arial, sans-serif;">
 	<article>
         	<details open>
                 	<summary style="font-weight: 900; font: 14px/1.4 'Helvetica Neue', Arial, sans-serif;">Executive Summary</summary>
 			<ul>
-				<li>Last update: $$LASTUPDATE$$
-				<li>Click <a href="$$ALERTLIST$$" target="_blank">here</a> for the list of monitored aircraft
+				<li>Last update: ##LASTUPDATE##
+				<li>Click <a href="##ALERTLIST##" target="_blank">here</a> for the list of monitored aircraft
+				<li>Right-click <a href="##CONCATLIST##" target="_blank">this link</a> to save a CSV version of the table below.
+				<li>Aircraft are listed in reverse chronological order. Click the header of a column to resort.
+				<li>Note that for each aircraft, only the first observation of the day is listed.
 			</ul>
 		</details>
 	</article>
 </section>
+<table border="1" class="js-sort-table">
+<tr>
+	<th class="js-sort-number">No.</th>
+	<th>Transponder ID</th>
+	<th>Tail</th>
+	<th>Owner</th>
+	<th class="js-sort-date">Date/Time First Seen</th>
+	<th>Time First Seen</th>
+	<th class="js-sort-number">Lat/Lon First Seen</th>
+	<th>Flight No.</th>
+	<th>Flight Map</th>
+</tr>

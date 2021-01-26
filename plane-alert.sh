@@ -42,6 +42,11 @@
 	TWURL=/home/pi/.rbenv/shims/twurl
 	TESTING=false
 
+	ADSBLINK="http:\/\/ramonk.net"		# make sure to escape any slashes - this text gets inserted in a SED replace
+	NAME="KX1T"
+	LASTUPDATE="$(date)"
+	ALERTLIST="alertlist.txt"		# make sure to escape any slashes - this text gets inserted in a SED replace
+	CONCATLIST="all-plane-alerts.txt"	# note - you can give this file any extension EXCEPT for .csv !!! Also, make sure to escape any slashes - this text gets inserted in a SED replace
 # -----------------------------------------------------------------------------------
 # Exit if there is no input file defined
 	[ "$1" == "" ] && { echo "No inputfile detected. Syntax: $0 <inputfile>"; exit 1; } || INFILE="$1"
@@ -72,7 +77,7 @@
 	[ "$TESTING" == "true" ] && echo 2. $TMPDIR/plalert.out.tmp contains $(cat $TMPDIR/plalert.out.tmp | wc -l) lines
 
 # If there's nothing in $TMPDIR/plalert.out.tmp then exit as there's nothing to be done...
-	[ "$(cat $TMPDIR/plalert.out.tmp | wc -l)" == "0" ] && exit 0
+	[ "$(cat $TMPDIR/plalert.out.tmp | wc -l)" == "0" ] && ( date > $WEBDIR/lastchecked.txt ; exit 0 )
 
 # Create a backup of $OUTFILE so we can compare later on. Ignore any complaints if there's no original $OUTFILE
 	for a in ${OUTFILE%.*}*.csv
@@ -180,13 +185,44 @@
 	done < <(cat ${OUTFILE%.*}*.diff)
 	(( ERRORCOUNT > 0 )) && echo There were $ERRORCOUNT tweet errors.
 
-# do some final clean-up
+# Now everything is in place, let's update the website
+
+	cp $PLANEALERTDIR/plane-alert.header.html $TMPDIR/plalert-index.tmp
+	cat ${OUTFILE%.*}*.csv | tac > $WEBDIR/$CONCATLIST
+	(( COUNTER = 1 ))
+	while read -r line
+	do
+		IFS=',' read -ra plalertplane <<< "$line"
+		if [ "${plalertplane[0]}" != "" ]
+		then
+			printf "%s\n" "<tr>" >> $TMPDIR/plalert-index.tmp
+			printf "    %s%s%s\n" "<td>" "$((COUNTER++))" "</td>" >> $TMPDIR/plalert-index.tmp # column: Number
+			printf "    %s%s%s\n" "<td>" "${plalertplane[0]}" "</td>" >> $TMPDIR/plalert-index.tmp # column: ICAO
+			printf "    %s%s%s\n" "<td>" "${plalertplane[1]}" "</td>" >> $TMPDIR/plalert-index.tmp # column: Tail
+			printf "    %s%s%s\n" "<td>" "${plalertplane[2]}" "</td>" >> $TMPDIR/plalert-index.tmp # column: Owner
+			printf "    %s%s%s\n" "<td>" "${plalertplane[3]}" "</td>" >> $TMPDIR/plalert-index.tmp # column: Plane Type
+			printf "    %s%s%s\n" "<td>" "${plalertplane[4]} ${plalertplane[5]}" "</td>" >> $TMPDIR/plalert-index.tmp # column: Date Time
+			printf "    %s%s%s\n" "<td>" "<a href=\"http://www.openstreetmap.org/?mlat=${plalertplane[6]}&mlon=${plalertplane[7]}&zoom=8\" target=\"_blank\">${plalertplane[6]}N, ${plalertplane[7]}E</a>" "</td>" >> $TMPDIR/plalert-index.tmp # column: LatN, LonE
+			printf "    %s%s%s\n" "<td>" "${plalertplane[8]}" "</td>" >> $TMPDIR/plalert-index.tmp # column: Flight No
+			printf "    %s%s%s\n" "<td>" "<a href=\"${plalertplane[9]}\" target=\"_blank\">ADSBExchange link</a>" "</td>" >> $TMPDIR/plalert-index.tmp # column: ADSBX link
+			printf "%s\n" "</tr>" >> $TMPDIR/plalert-index.tmp
+		fi
+	done < $WEBDIR/$CONCATLIST
+	cat $PLANEALERTDIR/plane-alert.footer.html >> $TMPDIR/plalert-index.tmp
+
+	#Now the basics have been written, we need to replace some of the variables in the template with real data:
+	sed -i "s/##NAME##/$NAME/g" $TMPDIR/plalert-index.tmp
+	sed -i "s/##ADSBLINK##/$ADSBLINK/g" $TMPDIR/plalert-index.tmp
+	sed -i "s/##LASTUPDATE##/$LASTUPDATE/g" $TMPDIR/plalert-index.tmp
+	sed -i "s/##ALERTLIST##/$ALERTLIST/g" $TMPDIR/plalert-index.tmp
+	sed -i "s/##CONCATLIST##/$CONCATLIST/g" $TMPDIR/plalert-index.tmp
+
+	#Finally, put the temp index into its place:
+	mv -f $TMPDIR/plalert-index.tmp $WEBDIR/index.html
+
+	# do some final clean-up
 	rm -f ${OUTFILE%.*}*.diff >/dev/null 2>/dev/null
 	rm -f ${OUTFILE%.*}*.old >/dev/null 2>/dev/null
 	rm -f $TMPDIR/plalert*.tmp >/dev/null 2>/dev/null
 
-[ "$TESTING" == "true" ] && echo 11. Finished.
-
-
-# Now everything is in place, let's update the website
-
+	[ "$TESTING" == "true" ] && echo 11. Finished.
