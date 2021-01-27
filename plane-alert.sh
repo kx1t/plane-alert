@@ -27,35 +27,44 @@
 # -----------------------------------------------------------------------------------
 	PLANEALERTDIR=/usr/share/plane-alert # the directory where this file and planefence.py are located
 # -----------------------------------------------------------------------------------
-# Only change the variables below if you know what you are doing.
 #
-# Note that these variables simply establish default values that will be overwritten by anything in 'plane-alert.conf'
-
-	TMPDIR=/tmp
-	WEBDIR=$PLANEALERTDIR/html
-	OUTFILE=$WEBDIR/plane-alert.csv
-	OUTAPPDATE=true
-	TRACKSERVICE="flightaware"
-	PLANEFILE=$PLANEALERTDIR/plane-alert-db.txt
-	TWIDFILE=$PLANEALERTDIR/plane-alert.twitterid # list of Twitter IDs - convert @user to Twitter ID at http://tweeterid.com
-	TWITTER=true
-	TWURL=/home/pi/.rbenv/shims/twurl
-	TESTING=false
-
-	ADSBLINK="http:\/\/ramonk.net"		# make sure to escape any slashes - this text gets inserted in a SED replace
-	NAME="KX1T"
-	LASTUPDATE="$(date)"
-	ALERTLIST="alertlist.txt"		# make sure to escape any slashes - this text gets inserted in a SED replace
-	CONCATLIST="all-plane-alerts.txt"	# note - you can give this file any extension EXCEPT for .csv !!! Also, make sure to escape any slashes - this text gets inserted in a SED replace
+# PLEASE EDIT PARAMETERS IN 'plane-alert.conf' BEFORE USING PLANE-ALERT !!!
+#
 # -----------------------------------------------------------------------------------
 # Exit if there is no input file defined
 	[ "$1" == "" ] && { echo "No inputfile detected. Syntax: $0 <inputfile>"; exit 1; } || INFILE="$1"
 #	[ "$TESTING" == "true" ] && echo cmdline arg = \"$1\"
 #
+#
+function cleanup
+{
+	# do some final clean-up before exiting - this funciton is called by a trap on receiving the EXIT signal
+	rm -f ${OUTFILE%.*}*.diff >/dev/null 2>/dev/null
+	rm -f ${OUTFILE%.*}*.old >/dev/null 2>/dev/null
+	rm -f $TMPDIR/plalert*.tmp >/dev/null 2>/dev/null
+	# restart planefence if it was active before we started:
+	[ "$PFACTIVE" == "true" ] && sudo /bin/systemctl restart planefence
+	[ "$TESTING" == "true" ] && echo 11. Finished.
+}
+#
+# Now make sure we call 'cleanup' upon exit:
+trap cleanup EXIT
+#
+#
 # -----------------------------------------------------------------------------------
 # Let's see if there is a CONF file that defines some of the parameters
 	[ -f "$PLANEALERTDIR/plane-alert.conf" ] && source "$PLANEALERTDIR/plane-alert.conf"
 # -----------------------------------------------------------------------------------
+# Switch off planefence if it's running, except when plane-alert.sh was called from within PlaneFence
+	if [ "$(/bin/systemctl is-active planefence 2>/dev/null)" == "active" ] && [ "$(ps -o comm= $PPID)" != "planefence.sh" ]
+	then
+		sudo /bin/systemctl stop planefence
+		PFACTIVE=true
+	else
+		PFACTIVE=false
+	fi
+# -----------------------------------------------------------------------------------
+#
 # Now let's start
 #
 # First, let's get the file with planes to monitor.
@@ -77,7 +86,7 @@
 	[ "$TESTING" == "true" ] && echo 2. $TMPDIR/plalert.out.tmp contains $(cat $TMPDIR/plalert.out.tmp | wc -l) lines
 
 # If there's nothing in $TMPDIR/plalert.out.tmp then exit as there's nothing to be done...
-	[ "$(cat $TMPDIR/plalert.out.tmp | wc -l)" == "0" ] && ( date > $WEBDIR/lastchecked.txt ; exit 0 )
+	[ "$(cat $TMPDIR/plalert.out.tmp | wc -l)" == "0" ] && exit 0
 
 # Create a backup of $OUTFILE so we can compare later on. Ignore any complaints if there's no original $OUTFILE
 	for a in ${OUTFILE%.*}*.csv
@@ -220,9 +229,3 @@
 	#Finally, put the temp index into its place:
 	mv -f $TMPDIR/plalert-index.tmp $WEBDIR/index.html
 
-	# do some final clean-up
-	rm -f ${OUTFILE%.*}*.diff >/dev/null 2>/dev/null
-	rm -f ${OUTFILE%.*}*.old >/dev/null 2>/dev/null
-	rm -f $TMPDIR/plalert*.tmp >/dev/null 2>/dev/null
-
-	[ "$TESTING" == "true" ] && echo 11. Finished.
