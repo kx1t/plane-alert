@@ -17,3 +17,22 @@ In order to run this, the following dependencies must be installed:
 `/usr/share/plane-alert/plane-alert.sh <filename>`
 
 The `<filename>` is a full path to one of the log files from Socket30003 - often `/tmp/dump1090-127_0_0_1-yymmdd.txt`
+
+# LICENSE
+For full text, see the LICENSE file included with this repository.
+The following is a short summary of terms. In case of conflict between this text and the terms and conditions set forth in the LICENSE file, those in the LICENSE file shall take precedence.
+
+    Copyright (C) 2021 Ramon F. Kolb
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
